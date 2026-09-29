@@ -1,0 +1,95 @@
+body {
+  background: #0f172a;
+  font-family: "Poppins", sans-serif;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  padding: 40px;
+}
+
+/* CARD */
+.job-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.job-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* HEADER */
+.job-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-header img {
+  width: 50px;
+  border-radius: 10px;
+  background: white;
+  padding: 5px;
+}
+
+.posted {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ROLE */
+.role {
+  margin: 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* TAGS */
+.tags {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tag {
+  background: #22c55e;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.tag.secondary {
+  background: #3b82f6;
+}
+
+/* INFO */
+.info {
+  font-size: 14px;
+  margin: 10px 0;
+  color: #cbd5f5;
+}
+
+/* BUTTON */
+.apply-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.apply-btn:hover {
+  opacity: 0.9;
+}
