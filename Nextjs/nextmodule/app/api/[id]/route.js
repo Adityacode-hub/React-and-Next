@@ -3,6 +3,7 @@ import connectDB from "../../lib/db";
 import Person from "../../lib/models/Person";
 import { NextResponse } from "next/server";
 //FOR UPDATING
+import  {redirect}  from "next/navigation";
 export async function PUT(req,{params})
 {
  try{
@@ -16,6 +17,7 @@ export async function PUT(req,{params})
         return NextResponse.json({error:"Person not Found"},
             {status:404}
         );
+        redirect("/home");
      }
      return NextResponse.json(person);
  }
