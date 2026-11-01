@@ -88,16 +88,24 @@
 //     </main>
 //   );
 // }
+"use client";
 
-"use client"
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-export default function Home(){
-  const pathname=usePathname();
-  
+import SearchBar from "./dashboard/page";
 
-  return(
-<>
-<h1>Current Pathname:{pathname}</h1>
-</>
-  )
+export default function Home() {
+    const pathname = usePathname();
+
+    return (
+        <>
+            <nav>
+                <Suspense fallback={<p>Loading search...</p>}>
+                    <SearchBar />
+                </Suspense>
+            </nav>
+
+            <h1>Current Pathname: {pathname}</h1>
+        </>
+    );
 }
