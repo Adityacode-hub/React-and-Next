@@ -1,5 +1,6 @@
 
 import {Roboto_Mono} from "next/font/google"
+
 //this is the method to set the local font by importing from the public folder 
 
 //import localFont from "next/font/google"
