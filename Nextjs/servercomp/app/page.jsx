@@ -32,7 +32,7 @@
 //     </div>
 //   );
 // }
-
+import Link from "next/link";
 const Home = () => {
   return (
     <section className="text-gray-600 body-font">
@@ -53,6 +53,7 @@ const Home = () => {
           
           <div className="flex flex-wrap w-1/2">
             <div className="md:p-2 p-1 w-1/2">
+            
               <img
                 alt="Gallery image"
                 className="w-full object-cover h-full object-center block"
@@ -106,6 +107,11 @@ const Home = () => {
           </div>
         </div>
       </div>
+   
+    <Link  href={'/about'} className="text-3xl font-bold text-green-900 underline"  >
+    Go to About Page
+    </Link>
+
     </section>
   );
 };

@@ -76,3 +76,71 @@ const myFont = localFont({
 
 
 //form mei server action post request perform krta aur waha se sara data server ko bhej deta h rather than boilerplate code and all
+
+
+<link is just like the <a> tag of the html it is used to visit the another page wihout rerendering </link>
+
+<Script/> in the Nextjs
+ the optimised version of the html <script>
+  used to load third-party scripts
+  provides loading startegies
+  imporves performance and page speed
+
+
+  <Image/> from "next/image" instead of <img>
+  -automatic image optimisation
+  -lazy loading..
+  - Responsive image
+  -Layout shift prevention
+  -Modern Format like web
+  --these optimisation imprive page performance and loading speed
+
+import Image from "next/imgae"
+export default function Page()
+{
+  return(
+    <Image src="/profile.png"
+    width={500}
+    height={500}
+    alt="Profile Image"
+    />
+  )
+}
+
+Important Required Props:-
+--------------------------
+.src
+.width
+.height
+.alt
+when u are using local image form the public folder then it is not required to give the height and width of the image
+simple:
+ <Image src={"/image.png"}
+alt="test image"
+width:{200}
+height:{300}
+/>
+//Note when we are using the remote url then it is important that  we need to put the height and width so that bowser can reserve space and avoid layout shifts
+
+important most important is 
+-------------------------------------
+REMOTE PATTERNS:- remote patterns is a configuration in next.config.js that tells Next.js which extends image source are allowed when using the next/image component
+By default Next.js block remote image for the security reasons so you must whitelist external image domains using remotepatterns.
+
+
+//this should be done under the next.config.ts
+
+import type {Nextconfig} from "next"
+const config:NextConfig={
+  images:{
+    remotepatterns:[
+      {
+        protocols:'https',
+        hostname:'s3.amaazonawa.com',
+        port:'',
+        pathname:'/my-bucket/** */'
+        search:'',
+      },
+    ]
+  }
+}

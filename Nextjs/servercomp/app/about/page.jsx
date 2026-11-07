@@ -1,24 +1,45 @@
 
-import {Roboto_Mono} from "next/font/google"
+//import {Roboto_Mono} from "next/font/google"
 
+import Link from "next/link"
 //this is the method to set the local font by importing from the public folder 
 
-//import localFont from "next/font/google"
+//import localFont from "next/font/local"
 // const fontname=localFont({
 //   sr:"../public/font-name.tff"
 // })
 
-
-const roboto_mono=Roboto_Mono({
-  subsets:['latin'],
-  display:'swap',
+import localFont from "next/font/local"
+const myfont=localFont({
+  src:"../../public/Sacramento-Regular.ttf",
+  display:"swap",
 })
+
+//const roboto_mono=Roboto_Mono({
+  //subsets:['latin'],
+  //display:'swap',
+//})
 
 export const About = () => {
   return (
-   <section className={`text-amber-500 body-font ${roboto_mono.className}`}>
+    <>
+     <Link  href={'/'} className="text-3xl font-bold text-green-900 underline"  >
+      Go to Home
+     </Link>
+     <Link
+  href={{
+    pathname: "/search",
+    query: {
+      query: "javascript",
+      category: "programming",
+    },
+  }}
+>
+  Search
+</Link>
+   <section className={`text-pink-700 body-font ${myfont.className}`}>
       <div className="container px-5 py-24 mx-auto">
-        <h1 className="sm:text-3xl text-2xl font-medium title-font text-center text-amber-500 mb-20">
+        <h1 className="sm:text-3xl text-2xl font-medium title-font text-center text-sky-300 mb-20">
           Raw Denim Heirloom Man Braid
           <br className="hidden sm:block" />
           Selfies Wayfarers
@@ -96,6 +117,7 @@ export const About = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };
 
