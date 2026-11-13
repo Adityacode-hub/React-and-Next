@@ -1,0 +1,383 @@
+NEXT.JS + BETTER AUTH + PRISMA 7 + NEON
+Simple setup guide in 8 steps
+Stack: Next.js App Router | TypeScript | Bun | Better Auth | Prisma 7 | Neon PostgreSQL
+
+Follow these 8 steps in order. Finish one step before moving to the next.
+
+====================================================================
+STEP 1 — INSTALL PACKAGES
+====================================================================
+
+WHEN:
+Do this once in your project, if these packages are not already installed.
+
+Run from the project root:
+
+    bun add better-auth @better-auth/prisma-adapter
+    bun add @prisma/client@7 @prisma/adapter-pg@7 pg dotenv
+    bun add -d prisma@7 @types/pg
+
+Check installed versions:
+
+    bun pm ls | grep -E "prisma|better-auth|adapter-pg|@better-auth/prisma-adapter|^pg"
+
+Keep `prisma`, `@prisma/client` and `@prisma/adapter-pg` on compatible
+7.x versions. This guide is specifically for Prisma 7.
+
+====================================================================
+STEP 2 — CREATE NEON DATABASE AND ENVIRONMENT VARIABLES
+====================================================================
+
+WHEN:
+Do this once when connecting your project to PostgreSQL.
+
+1. Create a PostgreSQL project at https://neon.tech/
+2. Copy the database connection string.
+3. Create or update `.env` in the project root.
+
+Add:
+
+    DATABASE_URL="YOUR_NEON_POSTGRES_CONNECTION_STRING"
+    BETTER_AUTH_URL="http://localhost:3000"
+
+Do not commit `.env` or share its values.
+
+Check `prisma7.config.ts`. This project uses that config filename.
+It should look like:
+
+    import "dotenv/config";
+    import { defineConfig, env } from "prisma/config";
+
+    export default defineConfig({
+      schema: "prisma/schema.prisma",
+      datasource: {
+        url: env("DATABASE_URL"),
+      },
+    });
+
+Do not create a second Prisma config file.
+
+====================================================================
+STEP 3 — CONFIGURE PRISMA AND CREATE THE DATABASE CLIENT
+====================================================================
+
+WHEN:
+Do this once when setting up Prisma.
+
+A. Open `prisma/schema.prisma` and configure:
+
+    generator client {
+      provider = "prisma-client"
+      output   = "../lib/generated/prisma"
+    }
+
+    datasource db {
+      provider = "postgresql"
+    }
+
+B. Create `lib/db.ts`:
+
+    import { PrismaClient } from "./generated/prisma/client";
+    import { PrismaPg } from "@prisma/adapter-pg";
+
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is not set");
+    }
+
+    const adapter = new PrismaPg({ connectionString });
+    const prisma = new PrismaClient({ adapter });
+
+    export default prisma;
+
+C. Generate the Prisma Client:
+
+    bun prisma generate
+
+The generated client should appear in `lib/generated/prisma`.
+
+IMPORTANT:
+Use `import prisma from "@/lib/db"` because `lib/db.ts` has a default
+export. Do not create separate PrismaClient instances in other files.
+
+====================================================================
+STEP 4 — CREATE BETTER AUTH SECRET AND GOOGLE OAUTH CREDENTIALS
+====================================================================
+
+WHEN:
+Do this once for each environment (development and production).
+
+A. Generate a Better Auth secret:
+
+    bun x auth@latest secret
+
+Copy the generated value into `.env`:
+
+    BETTER_AUTH_SECRET="YOUR_GENERATED_SECRET"
+
+B. Open Google Cloud Console:
+
+    https://console.cloud.google.com/
+
+1. Create or select a Google Cloud project.
+2. Configure Google Auth Platform / OAuth consent screen.
+3. If the app is in Testing mode, add your Google account as a test user.
+4. Create an OAuth Client ID and select Web application.
+5. Add this Authorized JavaScript origin:
+
+       http://localhost:3000
+
+6. Add this Authorized redirect URI:
+
+       http://localhost:3000/api/auth/callback/google
+
+7. Copy the credentials into `.env`:
+
+    GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID"
+    GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
+
+Never use `NEXT_PUBLIC_` for secrets. Never commit these values.
+
+====================================================================
+STEP 5 — CONFIGURE BETTER AUTH AND GENERATE ITS SCHEMA
+====================================================================
+
+WHEN:
+After Steps 1–4 are complete.
+
+A. Create `lib/auth.ts`:
+
+    import { betterAuth } from "better-auth";
+    import { prismaAdapter } from "better-auth/adapters/prisma";
+    import prisma from "./db";
+
+    export const auth = betterAuth({
+      database: prismaAdapter(prisma, {
+        provider: "postgresql",
+      }),
+
+      emailAndPassword: {
+        enabled: true,
+      },
+
+      socialProviders: {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        },
+      },
+    });
+
+B. Generate the Better Auth Prisma models:
+
+    bun x auth@latest generate
+
+C. Open `prisma/schema.prisma` and inspect the generated models.
+Better Auth commonly adds User, Session, Account and Verification.
+Use the generated models; do not guess or manually replace them.
+
+This command updates the schema only. It does NOT apply a database
+migration.
+
+If this command fails, stop and fix the error before moving on.
+
+====================================================================
+STEP 6 — APPLY THE DATABASE MIGRATION
+====================================================================
+
+WHEN:
+Only after Step 5 generated the Better Auth models successfully.
+
+Run:
+
+    bun prisma migrate dev --name add-better-auth
+    bun prisma generate
+
+What these commands do:
+- `migrate dev` creates and applies the database migration.
+- `generate` refreshes the Prisma Client.
+
+IMPORTANT:
+If Prisma reports drift and asks to reset the database, do NOT
+automatically run `migrate reset`. Reset can delete data in the target
+database schema. Only reset a disposable development database after
+confirming that its data can be destroyed. If the database has data to
+preserve, stop and reconcile the migration history instead.
+
+====================================================================
+STEP 7 — CREATE THE AUTH API ROUTE AND CLIENT
+====================================================================
+
+WHEN:
+After the Better Auth configuration and database migration are ready.
+
+A. Create this exact file:
+
+    app/api/auth/[...all]/route.ts
+
+Add:
+
+    import { auth } from "@/lib/auth";
+    import { toNextJsHandler } from "better-auth/next-js";
+
+    export const { GET, POST } = toNextJsHandler(auth);
+
+B. Create `lib/auth-client.ts`:
+
+    import { createAuthClient } from "better-auth/react";
+
+    export const authClient = createAuthClient();
+
+C. Use the client in a Client Component for the Google button:
+
+    "use client";
+
+    import { authClient } from "@/lib/auth-client";
+    import { Button } from "@/components/ui/button";
+
+    export function GoogleLoginButton() {
+      return (
+        <Button
+          type="button"
+          onClick={() =>
+            authClient.signIn.social({
+              provider: "google",
+              callbackURL: "/",
+            })
+          }
+        >
+          Continue with Google
+        </Button>
+      );
+    }
+
+The component must have `"use client"` at the top because it uses
+a click handler.
+
+====================================================================
+STEP 8 — READ SESSION, PROTECT PAGES AND TEST LOGIN
+====================================================================
+
+WHEN:
+After Steps 1–7 are complete.
+
+A. Create `lib/get-session.ts`:
+
+    import { auth } from "@/lib/auth";
+    import { headers } from "next/headers";
+
+    export async function getSession() {
+      return auth.api.getSession({
+        headers: await headers(),
+      });
+    }
+
+B. Protect pages that require login:
+
+    import { redirect } from "next/navigation";
+    import { getSession } from "@/lib/get-session";
+
+    export async function requireAuth() {
+      const session = await getSession();
+
+      if (!session) {
+        redirect("/login");
+      }
+
+      return session;
+    }
+
+C. Redirect logged-in users away from guest-only pages such as login:
+
+    export async function requireUnAuth() {
+      const session = await getSession();
+
+      if (session) {
+        redirect("/");
+      }
+
+      return null;
+    }
+
+Add the `redirect` and `getSession` imports to the file where you use
+`requireUnAuth`.
+
+D. Test the complete flow:
+
+[ ] Start the Next.js development server.
+[ ] Open `/login` while logged out.
+[ ] Click Continue with Google.
+[ ] Select your Google test account.
+[ ] Confirm Google redirects to `/api/auth/callback/google`.
+[ ] Confirm the user is redirected to `/`.
+[ ] Refresh and confirm the session still exists.
+[ ] Open `/login` while logged in; confirm it redirects to `/`.
+[ ] Test logout and confirm `/login` is accessible again.
+
+Remember:
+- A login form with email/password fields does not automatically work.
+  You must connect its submit handler to Better Auth.
+- If you change `.env`, restart the development server.
+- If Google says `redirect_uri_mismatch`, check the exact callback URL.
+- If you get `Provider not found`, check `socialProviders.google` in
+  `lib/auth.ts` and restart the server.
+- If the auth API returns 404, check the exact API route path.
+
+NEXT.JS 16 NOTE:
+If `cacheComponents: true` is enabled, do not add
+`export const dynamic = "force-dynamic"`. Next.js does not allow that
+route-segment setting with Cache Components. Request-time APIs such as
+`headers()` need the appropriate request-time rendering pattern, often
+inside a child component under Suspense. Do not catch and swallow
+Next.js `redirect()` exceptions.
+
+====================================================================
+WHEN YOU CHANGE THINGS LATER
+====================================================================
+
+You add/edit a Prisma model:
+    bun prisma migrate dev --name describe_the_change
+    bun prisma generate
+
+You add a Better Auth feature that changes database models:
+    bun x auth@latest generate
+    # Inspect prisma/schema.prisma
+    bun prisma migrate dev --name describe_auth_change
+    bun prisma generate
+
+You change Google credentials:
+    Update `.env` and restart the development server.
+
+You change the local port:
+    Update `BETTER_AUTH_URL` and the Google OAuth origin and redirect URI.
+
+You deploy:
+    Set production environment variables and run:
+    bun prisma migrate deploy
+
+Never run `migrate reset` on a database whose data must be preserved.
+
+====================================================================
+OFFICIAL DOCUMENTATION
+====================================================================
+
+Better Auth Prisma adapter:
+https://better-auth.com/docs/adapters/prisma
+
+Better Auth Google provider:
+https://better-auth.com/docs/authentication/google
+
+Better Auth installation:
+https://better-auth.com/docs/installation
+
+Prisma + Better Auth + Next.js:
+https://www.prisma.io/docs/guides/authentication/better-auth/nextjs
+
+Prisma 7 PostgreSQL adapter:
+https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/postgresql
+
+Google Cloud OAuth credentials:
+https://console.cloud.google.com/apis/credentials
+
+END
