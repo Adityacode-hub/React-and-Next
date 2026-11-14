@@ -20,8 +20,6 @@ export async function requireUnAuth() {
   });
 
   if (session) {
-    redirect("/");
+    redirect("/dashboard");
   }
-
-  return session;
 }

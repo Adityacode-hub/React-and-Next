@@ -1,14 +1,19 @@
-
 import { Suspense } from "react";
-import { requireUnAuth } from "@/lib/auth-guard";
-import React from 'react'
-export const metadata= {
+import * as AuthGuard from "@/lib/auth-guard";
+
+export const metadata = {
   title: "Login",
   description: "Welcome to Login",
 };
 
-async function AuthContent({ children }: { children: React.ReactNode }) {
-  await requireUnAuth();
+async function AuthContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  console.log("Available exports:", Object.keys(AuthGuard));
+
+  await AuthGuard.requireUnAuth();
 
   return <>{children}</>;
 }

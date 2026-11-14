@@ -1,13 +1,18 @@
 import { Suspense } from "react";
 import { requireAuth } from "@/lib/auth-guard";
+import { LogoutButton } from "@/components/logout-button";
 
 async function HomeContent() {
   const session = await requireAuth();
-  const { user } = session;
 
   return (
-    <div className="flex justify-center items-center h-screen bg-zinc-900 text-white">
-      <h1>Welcome, {user.name}</h1>
+    <div className="flex flex-col justify-center items-center h-screen bg-zinc-900 text-white gap-5">
+      <h1>Welcome, {session.user.name}</h1>
+      <p>{session.user.email}</p>
+
+      <h2>Protected Content</h2>
+
+      <LogoutButton />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +17,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function CardDemo() {
-  const handleGoogleLogin = async () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Email Login
+  const onLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
+      const { error } = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/dashboard",
       });
-    } catch (error) {
-      console.error("Google login failed:", error);
+
+      if (error) {
+        setError(error.message);
+      }
+    } catch {
+      setError("Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Login
+  const onLoginWithGoogle = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      }
+    } catch {
+      setError("Google login failed");
+      setLoading(false);
     }
   };
 
@@ -33,18 +72,18 @@ export function CardDemo() {
         <CardTitle>Login to your account</CardTitle>
 
         <CardDescription>
-          Enter your email below to login to your account
+          Enter your email below to login
         </CardDescription>
 
         <CardAction>
-          <Button variant="link" type="button">
+          <Button type="button" variant="link">
             Sign Up
           </Button>
         </CardAction>
       </CardHeader>
 
-      <CardContent>
-        <form>
+      <form onSubmit={onLogin}>
+        <CardContent>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
@@ -52,44 +91,49 @@ export function CardDemo() {
                 id="email"
                 type="email"
                 placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-
-                <a
-                  href="#"
-                  className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                >
-                  Forgot your password?
-                </a>
-              </div>
-
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
+
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
           </div>
-        </form>
-      </CardContent>
+        </CardContent>
 
-      <CardFooter className="flex-col gap-2">
-        <Button type="submit" className="w-full">
-          Login
-        </Button>
+        <CardFooter>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </Button>
+        </CardFooter>
+      </form>
 
+      <CardFooter>
         <Button
           type="button"
           variant="outline"
           className="w-full"
-          onClick={handleGoogleLogin}
+          onClick={onLoginWithGoogle}
+          disabled={loading}
         >
-          Login with Google
+          {loading ? "Please wait..." : "Login with Google"}
         </Button>
       </CardFooter>
     </Card>
